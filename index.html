@@ -2,12 +2,14 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тренер: мониторинг пловцов</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Тренерская панель — мониторинг пловцов</title>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
             background: #eef2f5;
             margin: 0;
             padding: 20px;
@@ -19,40 +21,58 @@
         }
         h1 {
             font-size: 1.8rem;
-            margin-bottom: 0;
+            margin: 0 0 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         .sub {
             color: #2c5a6e;
             border-left: 4px solid #0284c7;
             padding-left: 16px;
-            margin: 10px 0 25px 0;
+            margin: 5px 0 25px 0;
+            font-size: 0.9rem;
         }
         .controls {
             background: white;
             padding: 12px 20px;
-            border-radius: 20px;
+            border-radius: 28px;
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
-            gap: 12px;
+            align-items: center;
+            gap: 15px;
             margin-bottom: 25px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
         }
         select, button {
-            padding: 8px 16px;
+            padding: 8px 18px;
             border-radius: 40px;
             border: 1px solid #cbd5e1;
             background: white;
             font-size: 0.9rem;
             cursor: pointer;
+            transition: all 0.2s;
         }
         button {
             background: #0284c7;
             color: white;
             border: none;
+            font-weight: 500;
         }
         button:hover {
             background: #0369a1;
+            transform: scale(0.98);
+        }
+        .refresh-btn {
+            background: #2c5a6e;
         }
         .stats {
             display: flex;
@@ -62,111 +82,250 @@
         }
         .stat-card {
             background: white;
-            border-radius: 24px;
+            border-radius: 28px;
             padding: 12px 20px;
             flex: 1;
-            min-width: 120px;
+            min-width: 130px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
         }
         .stat-label {
             font-size: 0.7rem;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: #5b6e8c;
         }
         .stat-value {
             font-size: 1.8rem;
             font-weight: 700;
+            margin-top: 6px;
+            color: #0f172a;
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
         }
         .card {
             background: white;
-            border-radius: 24px;
+            border-radius: 28px;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            transition: transform 0.1s, box-shadow 0.2s;
+            border: 1px solid #e2edf2;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
         }
         .card-header {
             background: #f8fafc;
-            padding: 14px 18px;
-            font-weight: bold;
+            padding: 16px 20px;
+            font-weight: 700;
             font-size: 1.2rem;
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         .card-body {
-            padding: 16px 18px;
+            padding: 18px 20px;
+            flex: 1;
         }
         .row {
             display: flex;
             justify-content: space-between;
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px dashed #edf2f7;
+        }
+        .metric-name {
+            font-size: 0.85rem;
+            color: #4a5b7a;
+        }
+        .metric-value {
+            font-weight: 600;
+            font-size: 0.95rem;
         }
         .pain-note {
             background: #fff1f0;
             padding: 8px 12px;
-            border-radius: 14px;
+            border-radius: 18px;
             font-size: 0.75rem;
-            margin-top: 10px;
+            margin-top: 12px;
             color: #b91c1c;
+        }
+        .history-btn {
+            background: #eef2ff;
+            border: none;
+            color: #1e40af;
+            font-size: 0.75rem;
+            padding: 6px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+            margin-top: 12px;
+            width: 100%;
+            font-weight: 500;
+            transition: 0.1s;
+        }
+        .history-btn:hover {
+            background: #dbeafe;
         }
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 50px;
             color: #4b5563;
+            font-size: 1rem;
         }
         footer {
             margin-top: 40px;
             text-align: center;
             font-size: 0.7rem;
-            color: #6c7a8e;
+            color: #7c8ba0;
+            border-top: 1px solid #dce5ec;
+            padding-top: 20px;
+        }
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.75);
+            backdrop-filter: blur(3px);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 40px auto;
+            padding: 0;
+            border-radius: 32px;
+            width: 95%;
+            max-width: 1200px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 32px 32px 0 0;
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            z-index: 10;
+        }
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+        .close-modal {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            line-height: 1;
+            padding: 0 8px;
+        }
+        .close-modal:hover {
+            color: #0284c7;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .history-table th, .history-table td {
+            text-align: left;
+            padding: 12px 10px;
+            border-bottom: 1px solid #eef2f6;
+            vertical-align: top;
+        }
+        .history-table th {
+            background: #f1f5f9;
+            position: sticky;
+            top: 72px;
+            font-weight: 600;
+        }
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .stat-value { font-size: 1.3rem; }
+            .history-table th, .history-table td { padding: 8px 6px; font-size: 0.75rem; }
+        }
+        .update-time {
+            font-size: 0.7rem;
+            color: #5b6e8c;
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🏊‍♂️ Тренерская панель</h1>
-    <div class="sub">Утренний мониторинг пловцов — данные из Google Таблицы</div>
+    <h1>🏊‍♂️ Тренерская панель · Пловцы</h1>
+    <div class="sub">Утренний мониторинг: пульс, сон, вода, вес, орто, боли. Нажмите «История» для просмотра всех записей.</div>
 
     <div class="controls">
-        <div>
+        <div class="filters">
             <select id="athleteSelect">
                 <option value="all">📋 Все пловцы</option>
             </select>
-            <button id="refreshBtn">🔄 Обновить</button>
+            <button id="refreshBtn" class="refresh-btn">🔄 Обновить сейчас</button>
         </div>
-        <div id="updateTime" style="font-size:0.75rem;"></div>
+        <div id="updateTime" class="update-time">—</div>
     </div>
 
     <div class="stats" id="statsArea">
-        <div class="stat-card"><div class="stat-label">📊 Записей</div><div class="stat-value" id="totalEntries">—</div></div>
+        <div class="stat-card"><div class="stat-label">📊 Записей всего</div><div class="stat-value" id="totalEntries">—</div></div>
         <div class="stat-card"><div class="stat-label">❤️ Ср. пульс покоя</div><div class="stat-value" id="avgPulse">—</div></div>
         <div class="stat-card"><div class="stat-label">😴 Ср. качество сна</div><div class="stat-value" id="avgSleep">—</div></div>
         <div class="stat-card"><div class="stat-label">💧 Ср. чувство воды</div><div class="stat-value" id="avgWater">—</div></div>
     </div>
 
     <div id="gridContainer" class="grid">Загрузка данных...</div>
-    <footer>Данные из Google Формы обновляются автоматически. Нажмите «Обновить» для загрузки.</footer>
+    <footer>Данные из Google Таблицы (CSV). Обновление автоматически каждые 60 секунд + кнопкой.</footer>
+</div>
+
+<!-- Модальное окно истории -->
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">История пловца</h3>
+            <button class="close-modal" id="closeModalBtn">&times;</button>
+        </div>
+        <div id="modalBody" style="padding: 20px; overflow-x: auto;">
+            <!-- Таблица будет загружена динамически -->
+        </div>
+    </div>
 </div>
 
 <script>
-    // ⚠️ ВСТАВЬ СВОЮ CSV-ССЫЛКУ ИЗ ШАГА 2 ⚠️
+    // ====================== НАСТРОЙКА =======================
+    // ⚠️ ВСТАВЬ СВОЮ CSV-ССЫЛКУ (экспорт Google Sheets)
+    // Пример: 'https://docs.google.com/spreadsheets/d/1ABC123xyz/export?format=csv&gid=0'
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQs2VibpFmKHwgX-w-dK6vs_Og6ydGYIrg7xN2dT2voyqH7nqjO5qgIg4W0km58GIfoood9gyg9V86R/pub?output=csv';
     
-    let allRecords = [];
-    let athletesMap = new Map();
-
+    // ====================== ГЛОБАЛЬНЫЕ ДАННЫЕ ==================
+    let allRecords = [];       // все записи из CSV
+    let athletesMap = new Map(); // ключ: имя, значение: массив записей (отсортирован по дате новые сверху)
+    
+    // ====================== ПАРСИНГ CSV =======================
     function parseCSV(csvText) {
         const rows = csvText.split(/\r?\n/);
         if (rows.length < 2) return [];
         const headers = rows[0].split(',').map(h => h.trim().replace(/^\uFEFF/, ''));
         
-        function idx(patterns) {
-            for (let i=0; i<headers.length; i++) {
+        // Поиск индексов столбцов по ключевым словам (рус/англ)
+        function findCol(patterns) {
+            for (let i = 0; i < headers.length; i++) {
                 const h = headers[i].toLowerCase().replace(/[^а-яa-z0-9]/g, '');
                 for (let p of patterns) {
                     if (h.includes(p.toLowerCase().replace(/[^а-яa-z0-9]/g, ''))) return i;
@@ -176,213 +335,302 @@
         }
         
         const col = {
-            athlete: idx(['имя', 'пловец', 'спортсмен', 'athlete', 'выбери']),
-            date: idx(['дата', 'date']),
-            pulse: idx(['пульс в покое', 'пульс', 'pulse']),
-            sleep: idx(['качество сна', 'сон', 'sleep']),
-            weight: idx(['вес', 'weight']),
-            water: idx(['чувство воды', 'water']),
-            pain: idx(['боли', 'боль', 'pain']),
-            notes: idx(['заметки', 'note', 'комментарий']),
-            ortho: idx(['ортостатическая', 'орто'])
+            athlete: findCol(['имя', 'пловец', 'спортсмен', 'athlete', 'выбери']),
+            date: findCol(['дата', 'date']),
+            pulse: findCol(['пульс в покое', 'пульс', 'pulse']),
+            sleep: findCol(['качество сна', 'сон', 'sleep']),
+            weight: findCol(['вес', 'weight']),
+            water: findCol(['чувство воды', 'water']),
+            pain: findCol(['боли', 'боль', 'pain']),
+            notes: findCol(['заметки', 'note', 'комментарий']),
+            ortho: findCol(['ортостатическая', 'орто'])
         };
         
-        function getVal(arr, c) { return c >= 0 && c < arr.length ? arr[c] : ''; }
+        function getValue(arr, idx) {
+            return (idx !== -1 && idx < arr.length) ? arr[idx] : '';
+        }
         
+        // Правильный парсинг строки CSV (учитывает кавычки)
         function parseCSVLine(line) {
-            const result = [];
+            const res = [];
             let inQuote = false;
-            let current = '';
+            let cur = '';
             for (let i = 0; i < line.length; i++) {
                 const ch = line[i];
                 if (ch === '"') {
                     inQuote = !inQuote;
                 } else if (ch === ',' && !inQuote) {
-                    result.push(current.trim());
-                    current = '';
+                    res.push(cur.trim());
+                    cur = '';
                 } else {
-                    current += ch;
+                    cur += ch;
                 }
             }
-            result.push(current.trim());
-            return result.map(v => v.replace(/^"|"$/g, ''));
+            res.push(cur.trim());
+            return res.map(v => v.replace(/^"|"$/g, ''));
         }
         
         const records = [];
         for (let i = 1; i < rows.length; i++) {
             if (!rows[i].trim()) continue;
             const values = parseCSVLine(rows[i]);
+            if (values.length < 2) continue;
             
-            let athlete = getVal(values, col.athlete) || 'Неизвестный';
+            let athlete = getValue(values, col.athlete) || 'Неизвестный';
+            athlete = athlete.trim();
             if (athlete === '' || athlete === 'NaN') athlete = 'Пловец';
             
-            const pulse = parseFloat(getVal(values, col.pulse));
-            const sleep = parseFloat(getVal(values, col.sleep));
-            const weight = parseFloat(getVal(values, col.weight));
-            const waterFeel = parseFloat(getVal(values, col.water));
-            const ortho = parseFloat(getVal(values, col.ortho));
-            const pain = getVal(values, col.pain);
-            const notes = getVal(values, col.notes);
-            const dateRaw = getVal(values, col.date);
+            const dateRaw = getValue(values, col.date);
+            const pulse = parseFloat(getValue(values, col.pulse));
+            const sleep = parseFloat(getValue(values, col.sleep));
+            const weight = parseFloat(getValue(values, col.weight));
+            const waterFeel = parseFloat(getValue(values, col.water));
+            const ortho = parseFloat(getValue(values, col.ortho));
+            const pain = getValue(values, col.pain);
+            const notes = getValue(values, col.notes);
+            
+            let dateObj = null;
+            if (dateRaw) {
+                dateObj = new Date(dateRaw);
+                if (isNaN(dateObj.getTime())) dateObj = null;
+            }
             
             records.push({
                 athlete,
-                dateRaw,
+                dateRaw: dateRaw || '—',
+                dateObj,
                 pulse: isNaN(pulse) ? null : pulse,
                 sleep: isNaN(sleep) ? null : sleep,
                 weight: isNaN(weight) ? null : weight,
                 waterFeel: isNaN(waterFeel) ? null : waterFeel,
                 ortho: isNaN(ortho) ? null : ortho,
                 pain: pain || '',
-                notes: notes || '',
-                dateObj: dateRaw ? new Date(dateRaw) : null
+                notes: notes || ''
             });
         }
         return records;
     }
     
-    function groupByAthlete(records) {
+    // Группировка по пловцам и сортировка по дате (новые сверху)
+    function groupAndSort(records) {
         const map = new Map();
-        for (let r of records) {
-            if (!map.has(r.athlete)) map.set(r.athlete, []);
-            map.get(r.athlete).push(r);
+        for (const rec of records) {
+            if (!map.has(rec.athlete)) map.set(rec.athlete, []);
+            map.get(rec.athlete).push(rec);
         }
         for (let logs of map.values()) {
-            logs.sort((a,b) => (b.dateObj?.getTime()||0) - (a.dateObj?.getTime()||0));
+            logs.sort((a, b) => (b.dateObj?.getTime() || 0) - (a.dateObj?.getTime() || 0));
         }
         return map;
     }
     
-    function getLatestMetrics(logs) {
-        if (!logs.length) return null;
-        const last = logs[0];
-        
-        let avgPulse = logs.filter(l => l.pulse !== null).reduce((s,l) => s + l.pulse, 0);
-        avgPulse = avgPulse / (logs.filter(l => l.pulse !== null).length || 1);
-        
-        let avgSleep = logs.filter(l => l.sleep !== null).reduce((s,l) => s + l.sleep, 0);
-        avgSleep = avgSleep / (logs.filter(l => l.sleep !== null).length || 1);
-        
-        let avgWater = logs.filter(l => l.waterFeel !== null).reduce((s,l) => s + l.waterFeel, 0);
-        avgWater = avgWater / (logs.filter(l => l.waterFeel !== null).length || 1);
-        
+    // =============== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =================
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    // Получить средние значения для массива записей
+    function getAverages(logs) {
+        let sumPulse = 0, cntPulse = 0;
+        let sumSleep = 0, cntSleep = 0;
+        let sumWater = 0, cntWater = 0;
+        for (let l of logs) {
+            if (l.pulse !== null) { sumPulse += l.pulse; cntPulse++; }
+            if (l.sleep !== null) { sumSleep += l.sleep; cntSleep++; }
+            if (l.waterFeel !== null) { sumWater += l.waterFeel; cntWater++; }
+        }
         return {
-            lastDate: last.dateRaw || '—',
-            lastPulse: last.pulse,
-            lastSleep: last.sleep,
-            lastWeight: last.weight,
-            lastWater: last.waterFeel,
-            lastOrtho: last.ortho,
-            lastPain: last.pain,
-            lastNotes: last.notes,
-            avgPulse: Math.round(avgPulse),
-            avgSleep: avgSleep.toFixed(1),
-            avgWater: avgWater.toFixed(1),
-            totalEntries: logs.length
+            avgPulse: cntPulse ? Math.round(sumPulse / cntPulse) : null,
+            avgSleep: cntSleep ? (sumSleep / cntSleep).toFixed(1) : null,
+            avgWater: cntWater ? (sumWater / cntWater).toFixed(1) : null
         };
     }
     
+    // =============== ОТРИСОВКА КАРТОЧЕК ===================
     function renderDashboard(selectedAthlete) {
-        let filtered = allRecords;
-        if (selectedAthlete !== 'all') filtered = allRecords.filter(r => r.athlete === selectedAthlete);
+        // Фильтруем записи для общей статистики
+        let filteredRecords = allRecords;
+        if (selectedAthlete !== 'all') {
+            filteredRecords = allRecords.filter(r => r.athlete === selectedAthlete);
+        }
         
-        const totalEntries = filtered.length;
-        let avgPulse = filtered.filter(r => r.pulse !== null).reduce((s,l) => s + l.pulse, 0);
-        avgPulse = avgPulse / (filtered.filter(r => r.pulse !== null).length || 1);
-        let avgSleep = filtered.filter(r => r.sleep !== null).reduce((s,l) => s + l.sleep, 0);
-        avgSleep = avgSleep / (filtered.filter(r => r.sleep !== null).length || 1);
-        let avgWater = filtered.filter(r => r.waterFeel !== null).reduce((s,l) => s + l.waterFeel, 0);
-        avgWater = avgWater / (filtered.filter(r => r.waterFeel !== null).length || 1);
+        // Общая статистика сверху
+        const totalEntries = filteredRecords.length;
+        let sumPulse = 0, cntPulse = 0, sumSleep = 0, cntSleep = 0, sumWater = 0, cntWater = 0;
+        for (let r of filteredRecords) {
+            if (r.pulse !== null) { sumPulse += r.pulse; cntPulse++; }
+            if (r.sleep !== null) { sumSleep += r.sleep; cntSleep++; }
+            if (r.waterFeel !== null) { sumWater += r.waterFeel; cntWater++; }
+        }
+        const avgPulseAll = cntPulse ? Math.round(sumPulse / cntPulse) : 0;
+        const avgSleepAll = cntSleep ? (sumSleep / cntSleep).toFixed(1) : '—';
+        const avgWaterAll = cntWater ? (sumWater / cntWater).toFixed(1) : '—';
         
         document.getElementById('totalEntries').innerText = totalEntries;
-        document.getElementById('avgPulse').innerText = Math.round(avgPulse);
-        document.getElementById('avgSleep').innerText = avgSleep.toFixed(1);
-        document.getElementById('avgWater').innerText = avgWater.toFixed(1);
+        document.getElementById('avgPulse').innerText = avgPulseAll;
+        document.getElementById('avgSleep').innerText = avgSleepAll;
+        document.getElementById('avgWater').innerText = avgWaterAll;
         
         const grid = document.getElementById('gridContainer');
         if (selectedAthlete === 'all') {
-            const athletes = Array.from(athletesMap.keys()).sort();
-            if (athletes.length === 0) { grid.innerHTML = '<div class="loading">Нет данных</div>'; return; }
-            grid.innerHTML = athletes.map(name => {
-                const metrics = getLatestMetrics(athletesMap.get(name));
-                return cardHtml(name, metrics);
-            }).join('');
+            const athleteNames = Array.from(athletesMap.keys()).sort();
+            if (athleteNames.length === 0) {
+                grid.innerHTML = '<div class="loading">Нет данных. Проверьте CSV-ссылку и доступ к таблице.</div>';
+                return;
+            }
+            let cardsHtml = '';
+            for (let name of athleteNames) {
+                const logs = athletesMap.get(name);
+                if (!logs.length) continue;
+                const last = logs[0];
+                const averages = getAverages(logs);
+                cardsHtml += renderAthleteCard(name, last, averages, logs.length);
+            }
+            grid.innerHTML = cardsHtml;
         } else {
             const logs = athletesMap.get(selectedAthlete) || [];
-            const metrics = getLatestMetrics(logs);
-            if (!metrics) grid.innerHTML = '<div class="loading">Нет записей</div>';
-            else grid.innerHTML = cardHtml(selectedAthlete, metrics);
+            if (logs.length === 0) {
+                grid.innerHTML = '<div class="loading">Нет записей для этого пловца</div>';
+                return;
+            }
+            const last = logs[0];
+            const averages = getAverages(logs);
+            grid.innerHTML = renderAthleteCard(selectedAthlete, last, averages, logs.length);
         }
     }
     
-    function cardHtml(name, logs) {
-        // Берём последние 3 записи (или меньше, если их нет)
-        const lastLogs = logs.slice(0, 3);
-        
-        let rowsHtml = '';
-        for (let log of lastLogs) {
-            rowsHtml += `
-                <div class="log-entry" style="border-bottom: 1px solid #edf2f7; padding: 8px 0; margin-bottom: 6px;">
-                    <div style="font-size:0.7rem; color:#0284c7;">📅 ${escapeHtml(log.dateRaw) || '—'}</div>
-                    <div class="row"><span>❤️ Пульс</span><span>${log.pulse ?? '—'}</span></div>
-                    <div class="row"><span>😴 Сон</span><span>${log.sleep ?? '—'}/5</span></div>
-                    <div class="row"><span>💧 Чувство воды</span><span>${log.waterFeel ?? '—'}/5</span></div>
-                    <div class="row"><span>⚖️ Вес</span><span>${log.weight ?? '—'} кг</span></div>
-                    <div class="row"><span>🔄 Орто</span><span>${log.ortho ?? '—'}</span></div>
-                    ${log.pain ? `<div class="pain-note" style="margin-top:4px;">⚠️ ${escapeHtml(log.pain.substring(0,80))}</div>` : ''}
-                </div>
-            `;
-        }
+    function renderAthleteCard(name, last, averages, totalCount) {
+        const painHtml = last.pain ? `<div class="pain-note">⚠️ ${escapeHtml(last.pain.substring(0, 100))}</div>` : '';
+        const avgPulseText = averages.avgPulse !== null ? averages.avgPulse : '—';
+        const avgSleepText = averages.avgSleep !== null ? averages.avgSleep : '—';
+        const avgWaterText = averages.avgWater !== null ? averages.avgWater : '—';
         
         return `
             <div class="card">
                 <div class="card-header">
                     <span>🏊 ${escapeHtml(name)}</span>
-                    <span style="font-size:0.7rem;">📊 ${logs.length} записей</span>
+                    <span style="font-size:0.7rem; background:#eef2ff; padding:2px 8px; border-radius:40px;">📅 ${escapeHtml(last.dateRaw)}</span>
                 </div>
                 <div class="card-body">
-                    ${rowsHtml}
+                    <div class="row"><span class="metric-name">❤️ Пульс покоя</span><span class="metric-value"><b>${last.pulse ?? '—'}</b> (ср: ${avgPulseText})</span></div>
+                    <div class="row"><span class="metric-name">😴 Качество сна</span><span class="metric-value"><b>${last.sleep ?? '—'}/5</b> (ср: ${avgSleepText})</span></div>
+                    <div class="row"><span class="metric-name">💧 Чувство воды</span><span class="metric-value"><b>${last.waterFeel ?? '—'}/5</b> (ср: ${avgWaterText})</span></div>
+                    <div class="row"><span class="metric-name">⚖️ Вес утром</span><span class="metric-value">${last.weight ?? '—'} кг</span></div>
+                    <div class="row"><span class="metric-name">🔄 Ортостатика</span><span class="metric-value">${last.ortho ?? '—'} уд/мин</span></div>
+                    <div class="row"><span class="metric-name">📋 Всего записей</span><span class="metric-value">${totalCount}</span></div>
+                    ${painHtml}
+                    <button class="history-btn" data-athlete="${escapeHtml(name)}">📜 Показать историю (${totalCount} записей)</button>
                 </div>
             </div>
         `;
     }
     
-    function escapeHtml(s) { 
-        if (!s) return ''; 
-        return s.replace(/[&<>]/g, function(m){
-            if(m==='&') return '&amp;'; 
-            if(m==='<') return '&lt;'; 
-            if(m==='>') return '&gt;'; 
-            return m;
-        });
+    // ===================== МОДАЛЬНОЕ ОКНО =======================
+    function showHistory(athleteName) {
+        const logs = athletesMap.get(athleteName);
+        if (!logs || logs.length === 0) {
+            alert('Нет записей');
+            return;
+        }
+        const modal = document.getElementById('historyModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        
+        modalTitle.innerText = `📋 ${escapeHtml(athleteName)} — все записи (${logs.length})`;
+        
+        let tableHtml = `<table class="history-table">
+            <thead>
+                <tr><th>Дата</th><th>Пульс</th><th>Сон</th><th>Чувство воды</th><th>Вес (кг)</th><th>Орто</th><th>Боли</th><th>Заметки</th></tr>
+            </thead>
+            <tbody>`;
+        for (let log of logs) {
+            tableHtml += `
+                <tr>
+                    <td>${escapeHtml(log.dateRaw)}</td>
+                    <td>${log.pulse ?? '—'}</td>
+                    <td>${log.sleep !== null ? log.sleep+'/5' : '—'}</td>
+                    <td>${log.waterFeel !== null ? log.waterFeel+'/5' : '—'}</td>
+                    <td>${log.weight ?? '—'}</td>
+                    <td>${log.ortho ?? '—'}</td>
+                    <td style="max-width:200px;">${escapeHtml(log.pain) || '—'}</td>
+                    <td style="max-width:250px;">${escapeHtml(log.notes) || '—'}</td>
+                </tr>
+            `;
+        }
+        tableHtml += `</tbody></table>`;
+        modalBody.innerHTML = tableHtml;
+        modal.style.display = 'block';
     }
     
+    // ================= ЗАГРУЗКА ДАННЫХ И ОБНОВЛЕНИЕ ==============
     async function loadData() {
-        document.getElementById('gridContainer').innerHTML = '<div class="loading">⏳ Загрузка из Google Таблицы...</div>';
+        const grid = document.getElementById('gridContainer');
+        grid.innerHTML = '<div class="loading">⏳ Загрузка из Google Таблицы (CSV)...</div>';
         try {
-            const res = await fetch(CSV_URL, { cache: 'no-store' });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const csv = await res.text();
-            allRecords = parseCSV(csv);
-            athletesMap = groupByAthlete(allRecords);
+            const response = await fetch(CSV_URL, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status} — проверьте ссылку и доступ`);
+            const csvText = await response.text();
+            allRecords = parseCSV(csvText);
+            athletesMap = groupAndSort(allRecords);
             
+            // Обновить выпадающий список
             const select = document.getElementById('athleteSelect');
-            const current = select.value;
-            const names = Array.from(athletesMap.keys()).sort();
-            select.innerHTML = '<option value="all">📋 Все пловцы ('+names.length+')</option>' + 
-                names.map(n => `<option value="${escapeHtml(n)}">🏊 ${escapeHtml(n)}</option>`).join('');
-            if (names.includes(current)) select.value = current;
+            const currentVal = select.value;
+            const athleteNames = Array.from(athletesMap.keys()).sort();
+            select.innerHTML = '<option value="all">📋 Все пловцы (' + athleteNames.length + ')</option>' +
+                athleteNames.map(n => `<option value="${escapeHtml(n)}">🏊 ${escapeHtml(n)}</option>`).join('');
+            if (athleteNames.includes(currentVal)) select.value = currentVal;
             else select.value = 'all';
             
-            document.getElementById('updateTime').innerHTML = `🕒 ${new Date().toLocaleTimeString()}`;
+            document.getElementById('updateTime').innerHTML = `🕒 Обновлено: ${new Date().toLocaleTimeString()}`;
             renderDashboard(select.value);
-        } catch(e) {
-            document.getElementById('gridContainer').innerHTML = `<div class="loading">❌ Ошибка: ${e.message}<br>Проверь CSV-ссылку и публикацию таблицы.</div>`;
+            
+            // Перепривязать события к кнопкам "История" (они создаются динамически)
+            attachHistoryButtons();
+        } catch (err) {
+            console.error(err);
+            grid.innerHTML = `<div class="loading">❌ Ошибка: ${err.message}<br>Убедитесь, что CSV_URL правильный и таблица опубликована как «Все, у кого есть ссылка — просмотр».</div>`;
         }
     }
     
-    document.getElementById('refreshBtn').onclick = () => loadData();
-    document.getElementById('athleteSelect').onchange = () => renderDashboard(document.getElementById('athleteSelect').value);
+    function attachHistoryButtons() {
+        const btns = document.querySelectorAll('.history-btn');
+        btns.forEach(btn => {
+            btn.removeEventListener('click', historyClickHandler);
+            btn.addEventListener('click', historyClickHandler);
+        });
+    }
+    
+    function historyClickHandler(e) {
+        const athlete = e.currentTarget.getAttribute('data-athlete');
+        if (athlete) showHistory(athlete);
+    }
+    
+    // ===================== СОБЫТИЯ =======================
+    document.getElementById('refreshBtn').addEventListener('click', () => loadData());
+    document.getElementById('athleteSelect').addEventListener('change', (e) => {
+        renderDashboard(e.target.value);
+        attachHistoryButtons(); // кнопки пересоздаются в renderDashboard, поэтому нужно обновить обработчики
+    });
+    
+    // Закрытие модального окна
+    const modal = document.getElementById('historyModal');
+    const closeBtn = document.getElementById('closeModalBtn');
+    closeBtn.onclick = () => { modal.style.display = 'none'; };
+    window.onclick = (event) => { if (event.target === modal) modal.style.display = 'none'; };
+    
+    // Автообновление каждые 60 секунд (можно изменить)
+    setInterval(() => {
+        loadData();
+    }, 60000);
+    
+    // Первый запуск
     loadData();
 </script>
 </body>
