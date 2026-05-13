@@ -315,23 +315,33 @@
         }
     }
     
-    function cardHtml(name, m) {
-        const painHtml = m.lastPain ? `<div class="pain-note">⚠️ Боли: ${escapeHtml(m.lastPain.substring(0,100))}</div>` : '';
+    function cardHtml(name, logs) {
+        // Берём последние 3 записи (или меньше, если их нет)
+        const lastLogs = logs.slice(0, 3);
+        
+        let rowsHtml = '';
+        for (let log of lastLogs) {
+            rowsHtml += `
+                <div class="log-entry" style="border-bottom: 1px solid #edf2f7; padding: 8px 0; margin-bottom: 6px;">
+                    <div style="font-size:0.7rem; color:#0284c7;">📅 ${escapeHtml(log.dateRaw) || '—'}</div>
+                    <div class="row"><span>❤️ Пульс</span><span>${log.pulse ?? '—'}</span></div>
+                    <div class="row"><span>😴 Сон</span><span>${log.sleep ?? '—'}/5</span></div>
+                    <div class="row"><span>💧 Чувство воды</span><span>${log.waterFeel ?? '—'}/5</span></div>
+                    <div class="row"><span>⚖️ Вес</span><span>${log.weight ?? '—'} кг</span></div>
+                    <div class="row"><span>🔄 Орто</span><span>${log.ortho ?? '—'}</span></div>
+                    ${log.pain ? `<div class="pain-note" style="margin-top:4px;">⚠️ ${escapeHtml(log.pain.substring(0,80))}</div>` : ''}
+                </div>
+            `;
+        }
         
         return `
             <div class="card">
                 <div class="card-header">
                     <span>🏊 ${escapeHtml(name)}</span>
-                    <span style="font-size:0.7rem;">📅 ${escapeHtml(m.lastDate)}</span>
+                    <span style="font-size:0.7rem;">📊 ${logs.length} записей</span>
                 </div>
                 <div class="card-body">
-                    <div class="row"><span>❤️ Пульс покоя</span><span><b>${m.lastPulse ?? '—'}</b> (ср: ${m.avgPulse})</span></div>
-                    <div class="row"><span>😴 Качество сна</span><span><b>${m.lastSleep ?? '—'}/5</b> (ср: ${m.avgSleep})</span></div>
-                    <div class="row"><span>💧 Чувство воды</span><span><b>${m.lastWater ?? '—'}/5</b> (ср: ${m.avgWater})</span></div>
-                    <div class="row"><span>⚖️ Вес утром</span><span>${m.lastWeight ?? '—'} кг</span></div>
-                    <div class="row"><span>🔄 Ортостатика</span><span>${m.lastOrtho ?? '—'} уд/мин</span></div>
-                    <div class="row"><span>📋 Всего записей</span><span>${m.totalEntries}</span></div>
-                    ${painHtml}
+                    ${rowsHtml}
                 </div>
             </div>
         `;
