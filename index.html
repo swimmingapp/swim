@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренер: мониторинг пловцов</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #eef2f5;
+            margin: 0;
+            padding: 20px;
+            color: #1e2a3e;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0;
+        }
+        .sub {
+            color: #2c5a6e;
+            border-left: 4px solid #0284c7;
+            padding-left: 16px;
+            margin: 10px 0 25px 0;
+        }
+        .controls {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        select, button {
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        button {
+            background: #0284c7;
+            color: white;
+            border: none;
+        }
+        button:hover {
+            background: #0369a1;
+        }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 12px 20px;
+            flex: 1;
+            min-width: 120px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #5b6e8c;
+        }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .card-header {
+            background: #f8fafc;
+            padding: 14px 18px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .card-body {
+            padding: 16px 18px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px dashed #edf2f7;
+        }
+        .pain-note {
+            background: #fff1f0;
+            padding: 8px 12px;
+            border-radius: 14px;
+            font-size: 0.75rem;
+            margin-top: 10px;
+            color: #b91c1c;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4b5563;
+        }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6c7a8e;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🏊‍♂️ Тренерская панель</h1>
+    <div class="sub">Утренний мониторинг пловцов — данные из Google Таблицы</div>
+
+    <div class="controls">
+        <div>
+            <select id="athleteSelect">
+                <option value="all">📋 Все пловцы</option>
+            </select>
+            <button id="refreshBtn">🔄 Обновить</button>
+        </div>
+        <div id="updateTime" style="font-size:0.75rem;"></div>
+    </div>
+
+    <div class="stats" id="statsArea">
+        <div class="stat-card"><div class="stat-label">📊 Записей</div><div class="stat-value" id="totalEntries">—</div></div>
+        <div class="stat-card"><div class="stat-label">❤️ Ср. пульс покоя</div><div class="stat-value" id="avgPulse">—</div></div>
+        <div class="stat-card"><div class="stat-label">😴 Ср. качество сна</div><div class="stat-value" id="avgSleep">—</div></div>
+        <div class="stat-card"><div class="stat-label">💧 Ср. чувство воды</div><div class="stat-value" id="avgWater">—</div></div>
+    </div>
+
+    <div id="gridContainer" class="grid">Загрузка данных...</div>
+    <footer>Данные из Google Формы обновляются автоматически. Нажмите «Обновить» для загрузки.</footer>
+</div>
+
+<script>
+    // ⚠️ ВСТАВЬ СВОЮ CSV-ССЫЛКУ ИЗ ШАГА 2 ⚠️
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQs2VibpFmKHwgX-w-dK6vs_Og6ydGYIrg7xN2dT2voyqH7nqjO5qgIg4W0km58GIfoood9gyg9V86R/pub?output=csv';
+    
+    let allRecords = [];
+    let athletesMap = new Map();
+
+    function parseCSV(csvText) {
+        const rows = csvText.split(/\r?\n/);
+        if (rows.length < 2) return [];
+        const headers = rows[0].split(',').map(h => h.trim().replace(/^\uFEFF/, ''));
+        
+        function idx(patterns) {
+            for (let i=0; i<headers.length; i++) {
+                const h = headers[i].toLowerCase().replace(/[^а-яa-z0-9]/g, '');
+                for (let p of patterns) {
+                    if (h.includes(p.toLowerCase().replace(/[^а-яa-z0-9]/g, ''))) return i;
+                }
+            }
+            return -1;
+        }
+        
+        const col = {
+            athlete: idx(['имя', 'пловец', 'спортсмен', 'athlete', 'выбери']),
+            date: idx(['дата', 'date']),
+            pulse: idx(['пульс в покое', 'пульс', 'pulse']),
+            sleep: idx(['качество сна', 'сон', 'sleep']),
+            weight: idx(['вес', 'weight']),
+            water: idx(['чувство воды', 'water']),
+            pain: idx(['боли', 'боль', 'pain']),
+            notes: idx(['заметки', 'note', 'комментарий']),
+            ortho: idx(['ортостатическая', 'орто'])
+        };
+        
+        function getVal(arr, c) { return c >= 0 && c < arr.length ? arr[c] : ''; }
+        
+        function parseCSVLine(line) {
+            const result = [];
+            let inQuote = false;
+            let current = '';
+            for (let i = 0; i < line.length; i++) {
+                const ch = line[i];
+                if (ch === '"') {
+                    inQuote = !inQuote;
+                } else if (ch === ',' && !inQuote) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += ch;
+                }
+            }
+            result.push(current.trim());
+            return result.map(v => v.replace(/^"|"$/g, ''));
+        }
+        
+        const records = [];
+        for (let i = 1; i < rows.length; i++) {
+            if (!rows[i].trim()) continue;
+            const values = parseCSVLine(rows[i]);
+            
+            let athlete = getVal(values, col.athlete) || 'Неизвестный';
+            if (athlete === '' || athlete === 'NaN') athlete = 'Пловец';
+            
+            const pulse = parseFloat(getVal(values, col.pulse));
+            const sleep = parseFloat(getVal(values, col.sleep));
+            const weight = parseFloat(getVal(values, col.weight));
+            const waterFeel = parseFloat(getVal(values, col.water));
+            const ortho = parseFloat(getVal(values, col.ortho));
+            const pain = getVal(values, col.pain);
+            const notes = getVal(values, col.notes);
+            const dateRaw = getVal(values, col.date);
+            
+            records.push({
+                athlete,
+                dateRaw,
+                pulse: isNaN(pulse) ? null : pulse,
+                sleep: isNaN(sleep) ? null : sleep,
+                weight: isNaN(weight) ? null : weight,
+                waterFeel: isNaN(waterFeel) ? null : waterFeel,
+                ortho: isNaN(ortho) ? null : ortho,
+                pain: pain || '',
+                notes: notes || '',
+                dateObj: dateRaw ? new Date(dateRaw) : null
+            });
+        }
+        return records;
+    }
+    
+    function groupByAthlete(records) {
+        const map = new Map();
+        for (let r of records) {
+            if (!map.has(r.athlete)) map.set(r.athlete, []);
+            map.get(r.athlete).push(r);
+        }
+        for (let logs of map.values()) {
+            logs.sort((a,b) => (b.dateObj?.getTime()||0) - (a.dateObj?.getTime()||0));
+        }
+        return map;
+    }
+    
+    function getLatestMetrics(logs) {
+        if (!logs.length) return null;
+        const last = logs[0];
+        
+        let avgPulse = logs.filter(l => l.pulse !== null).reduce((s,l) => s + l.pulse, 0);
+        avgPulse = avgPulse / (logs.filter(l => l.pulse !== null).length || 1);
+        
+        let avgSleep = logs.filter(l => l.sleep !== null).reduce((s,l) => s + l.sleep, 0);
+        avgSleep = avgSleep / (logs.filter(l => l.sleep !== null).length || 1);
+        
+        let avgWater = logs.filter(l => l.waterFeel !== null).reduce((s,l) => s + l.waterFeel, 0);
+        avgWater = avgWater / (logs.filter(l => l.waterFeel !== null).length || 1);
+        
+        return {
+            lastDate: last.dateRaw || '—',
+            lastPulse: last.pulse,
+            lastSleep: last.sleep,
+            lastWeight: last.weight,
+            lastWater: last.waterFeel,
+            lastOrtho: last.ortho,
+            lastPain: last.pain,
+            lastNotes: last.notes,
+            avgPulse: Math.round(avgPulse),
+            avgSleep: avgSleep.toFixed(1),
+            avgWater: avgWater.toFixed(1),
+            totalEntries: logs.length
+        };
+    }
+    
+    function renderDashboard(selectedAthlete) {
+        let filtered = allRecords;
+        if (selectedAthlete !== 'all') filtered = allRecords.filter(r => r.athlete === selectedAthlete);
+        
+        const totalEntries = filtered.length;
+        let avgPulse = filtered.filter(r => r.pulse !== null).reduce((s,l) => s + l.pulse, 0);
+        avgPulse = avgPulse / (filtered.filter(r => r.pulse !== null).length || 1);
+        let avgSleep = filtered.filter(r => r.sleep !== null).reduce((s,l) => s + l.sleep, 0);
+        avgSleep = avgSleep / (filtered.filter(r => r.sleep !== null).length || 1);
+        let avgWater = filtered.filter(r => r.waterFeel !== null).reduce((s,l) => s + l.waterFeel, 0);
+        avgWater = avgWater / (filtered.filter(r => r.waterFeel !== null).length || 1);
+        
+        document.getElementById('totalEntries').innerText = totalEntries;
+        document.getElementById('avgPulse').innerText = Math.round(avgPulse);
+        document.getElementById('avgSleep').innerText = avgSleep.toFixed(1);
+        document.getElementById('avgWater').innerText = avgWater.toFixed(1);
+        
+        const grid = document.getElementById('gridContainer');
+        if (selectedAthlete === 'all') {
+            const athletes = Array.from(athletesMap.keys()).sort();
+            if (athletes.length === 0) { grid.innerHTML = '<div class="loading">Нет данных</div>'; return; }
+            grid.innerHTML = athletes.map(name => {
+                const metrics = getLatestMetrics(athletesMap.get(name));
+                return cardHtml(name, metrics);
+            }).join('');
+        } else {
+            const logs = athletesMap.get(selectedAthlete) || [];
+            const metrics = getLatestMetrics(logs);
+            if (!metrics) grid.innerHTML = '<div class="loading">Нет записей</div>';
+            else grid.innerHTML = cardHtml(selectedAthlete, metrics);
+        }
+    }
+    
+    function cardHtml(name, m) {
+        const painHtml = m.lastPain ? `<div class="pain-note">⚠️ Боли: ${escapeHtml(m.lastPain.substring(0,100))}</div>` : '';
+        
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <span>🏊 ${escapeHtml(name)}</span>
+                    <span style="font-size:0.7rem;">📅 ${escapeHtml(m.lastDate)}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row"><span>❤️ Пульс покоя</span><span><b>${m.lastPulse ?? '—'}</b> (ср: ${m.avgPulse})</span></div>
+                    <div class="row"><span>😴 Качество сна</span><span><b>${m.lastSleep ?? '—'}/5</b> (ср: ${m.avgSleep})</span></div>
+                    <div class="row"><span>💧 Чувство воды</span><span><b>${m.lastWater ?? '—'}/5</b> (ср: ${m.avgWater})</span></div>
+                    <div class="row"><span>⚖️ Вес утром</span><span>${m.lastWeight ?? '—'} кг</span></div>
+                    <div class="row"><span>🔄 Ортостатика</span><span>${m.lastOrtho ?? '—'} уд/мин</span></div>
+                    <div class="row"><span>📋 Всего записей</span><span>${m.totalEntries}</span></div>
+                    ${painHtml}
+                </div>
+            </div>
+        `;
+    }
+    
+    function escapeHtml(s) { 
+        if (!s) return ''; 
+        return s.replace(/[&<>]/g, function(m){
+            if(m==='&') return '&amp;'; 
+            if(m==='<') return '&lt;'; 
+            if(m==='>') return '&gt;'; 
+            return m;
+        });
+    }
+    
+    async function loadData() {
+        document.getElementById('gridContainer').innerHTML = '<div class="loading">⏳ Загрузка из Google Таблицы...</div>';
+        try {
+            const res = await fetch(CSV_URL, { cache: 'no-store' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const csv = await res.text();
+            allRecords = parseCSV(csv);
+            athletesMap = groupByAthlete(allRecords);
+            
+            const select = document.getElementById('athleteSelect');
+            const current = select.value;
+            const names = Array.from(athletesMap.keys()).sort();
+            select.innerHTML = '<option value="all">📋 Все пловцы ('+names.length+')</option>' + 
+                names.map(n => `<option value="${escapeHtml(n)}">🏊 ${escapeHtml(n)}</option>`).join('');
+            if (names.includes(current)) select.value = current;
+            else select.value = 'all';
+            
+            document.getElementById('updateTime').innerHTML = `🕒 ${new Date().toLocaleTimeString()}`;
+            renderDashboard(select.value);
+        } catch(e) {
+            document.getElementById('gridContainer').innerHTML = `<div class="loading">❌ Ошибка: ${e.message}<br>Проверь CSV-ссылку и публикацию таблицы.</div>`;
+        }
+    }
+    
+    document.getElementById('refreshBtn').onclick = () => loadData();
+    document.getElementById('athleteSelect').onchange = () => renderDashboard(document.getElementById('athleteSelect').value);
+    loadData();
+</script>
+</body>
+</html>
